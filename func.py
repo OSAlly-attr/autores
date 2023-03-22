@@ -26,13 +26,16 @@ def chrome():
     return
 
 # LINEに送信する関数
+# def send_line(text):
+#     TOKEN =  'Ghbzj30VWqKNzYTk1dZnh3NjkjRUntNJdUxCQNfEkOx'
+#     api_url = 'https://notify-api.line.me/api/notify'
+#     send_text = text
+#     TOKEN_dic = {'Authorization': 'Bearer ' + TOKEN}
+#     send_dic = {'message': send_text}
+#     requests.post(api_url, headers=TOKEN_dic, data=send_dic)
+
 def send_line(text):
-    TOKEN =  'Ghbzj30VWqKNzYTk1dZnh3NjkjRUntNJdUxCQNfEkOx'
-    api_url = 'https://notify-api.line.me/api/notify'
-    send_text = text
-    TOKEN_dic = {'Authorization': 'Bearer ' + TOKEN}
-    send_dic = {'message': send_text}
-    requests.post(api_url, headers=TOKEN_dic, data=send_dic)
+    return
 
 # xpathでクリックする関数
 def xpath_click(driver, xpath):
