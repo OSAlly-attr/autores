@@ -158,7 +158,7 @@ def parent_check(driver):
     tmp.reverse()
     tmp = sorted(tmp)
     # ファイル出力
-    with open('./items.csv', 'w') as f:
+    with open('./items.csv', 'w', newline="") as f:
         writer = csv.writer(f)
         writer.writerows(tmp)
     xpath_click(driver, to_home_from_status)
