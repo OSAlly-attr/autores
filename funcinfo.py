@@ -28,7 +28,7 @@ def chrome():
 
 # LINEに送信する関数
 def send_line(text):
-    TOKEN =  'Ghbzj30VWqKNzYTk1dZnh3NjkjRUntNJdUxCQNfEkOx'
+    TOKEN =  ''
     api_url = 'https://notify-api.line.me/api/notify'
     send_text = text
     TOKEN_dic = {'Authorization': 'Bearer ' + TOKEN}
