@@ -1,6 +1,7 @@
 import time
 import csv
 import requests
+import operator
 import unicodedata
 from tkinter import messagebox
 from selenium import webdriver
@@ -94,109 +95,46 @@ def xpath_exist_check(driver, xpath, tm):
         except:
             time.sleep(dtry)
     return False
-    for c in text:
-        letter = unicodedata.east_asian_width(c)
-        if letter != 'W':
-            return False
-    return True
 
-# 時間帯指定する関数　(アカウントごとに半面AB交互、全面はとらない)
-def select_time(driver, x, j):
-    for i in range(trymax):
-        elements = driver.find_elements(By.CLASS_NAME, time_slot_class_l)
-        if len(elements)!=0:
-            break
-        else:
-            #モーダルスキップ
-            if len(driver.find_elements(By.XPATH, tutorial_skip_button))!=0:
-                xpath_click(driver, tutorial_skip_button)
-                continue
-            else:
-                time.sleep(dtry)
-    elements_list = []
-    for elm in elements:
-        elm_text = elm.get_attribute('title')
-        for i in range(len(elm_text)):
-            if elm_text[i]=="時":
-                elm_text = int(elm_text[0:i])
-                break
-        if start_time_list[int(j[2])] <= elm_text and elm_text < start_time_list[int(j[2])+1]:
-            elements_list.append(elm)
-    if len(elements_list) == 3:
-        elements_list[1+x%2].click()
-    elif len(elements_list) == 2:
-        elements_list[x%2].click()
-    elif len(elements_list) == 1:
-        elements_list[0].click()
-
-# 親アカウントの抽選申込をチェックする関数
-def parent_check(driver):
-    if check_bl[0] == False:
-        return False
-    time.sleep(1)
-    xpath_click(driver, all_status)
-    time.sleep(1)
-    xpath_click(driver, num_view)
-    time.sleep(1)
-    xpath_click(driver, view_twenty)
-    time.sleep(1)
-    tmp = []
-    for i in range(1,16):
-        if '抽選待ち' in xpath_get(driver, view_item_attr1 + str(i) + view_item_attr2):
-            top_gym = xpath_get(driver, view_item_gym1 + str(i) + view_item_gym2)
-            top_date = xpath_get(driver, view_item_date1 + str(i) + view_item_date2)
-            top_time = xpath_get(driver, view_item_time1 + str(i) + view_item_time2)
-            top_time = int(top_time[:top_time.find(':')])
-            if top_time < 10:
-                top_time_zone = 0
-            elif top_time ==  11:
-                top_time_zone = 1
-            elif top_time == 14:
-                top_time_zone = 2
-            elif top_time > 16:
-                top_time_zone = 3
-            top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], str(top_time_zone)]
-            tmp.append(top_item)
-    
-    tmp.reverse()
-    tmp = sorted(tmp)
-    # ファイル出力
-    with open('./items.csv', 'w', newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(tmp)
-    xpath_click(driver, to_home_from_status)
-    xpath_click(driver, main_menu2)
-    xpath_click(driver, logout_button)
-    return True
-
-# 途中から始める項目をチェックする関数
-def start_check(driver, gym_day_time):
+# 当選確認する関数
+def infocheck(driver, x, account_password):
     try:
-        if '抽選待ち' in xpath_get(driver, status_top_attr):
-            top_gym = xpath_get(driver, status_top_gym)
-            top_date = xpath_get(driver, status_top_date)
-            top_time = xpath_get(driver, status_top_time)
-            top_time = int(top_time[:top_time.find(':')])
-            if top_time < 10:
-                top_time_zone = 0
-            elif top_time ==  11:
-                top_time_zone = 1
-            elif top_time == 14:
-                top_time_zone = 2
-            elif top_time > 16:
-                top_time_zone = 3
-            top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], str(top_time_zone)]
-            for j in range(len(gym_day_time)):
-                if gym_day_time[j] == top_item:
-                    idx = j
-            if idx == len(gym_day_time)-1:
-                print("次のアカウントから始めます")
-            else:
-                print(str(idx+2) + "枠目から始めます")
-            return idx
-        return -1
+        # if '当選' in xpath_get(driver, status_top_attr):
+        xpath_click(driver, all_status)
+        xpath_click(driver, num_view)
+        xpath_click(driver, view_twenty)
+        tmp = []
+        for i in range(1,16):
+            if '当選' in xpath_get(driver, view_item_attr1 + str(i) + view_item_attr2) and '確定' not in xpath_get(driver, view_item_attr1 + str(i) + view_item_attr2):
+                top_gym = xpath_get(driver, view_item_gym1 + str(i) + view_item_gym2)
+                top_date = xpath_get(driver, view_item_date1 + str(i) + view_item_date2)
+                top_time = xpath_get(driver, view_item_time1 + str(i) + view_item_time2)
+                top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], top_date[top_date.find('('):],str(top_time)]
+                tmp.append(top_item)
+                winlist.append([str(account_password[x][0].zfill(8)), top_item[0], top_item[1], top_item[2], top_item[3]])
+                # 利用予約
+                xpath_click(driver, view_item_a1 + str(i) + view_item_a2)
+                xpath_click(driver,confirm_win)
+                xpath_click(driver, howtopay)
+                xpath_click(driver, confirm_pay)
+                time.sleep(0.5)
+                xpath_click(driver, confirm_appl)
+                time.sleep(0.5)
+                xpath_click(driver, confirm_err)
+                time.sleep(0.5)
+                xpath_click(driver, confirm_check)
+                xpath_click(driver, confirm_appl2)
+                xpath_click(driver, to_status_appl)
+                xpath_click(driver, num_view)
+                xpath_click(driver, view_twenty)
+        if len(tmp)>0:
+            sendtext = ''
+            for j in range(len(tmp)):
+                sendtext = sendtext + '\n' + str(account_password[x][0].zfill(8)) + ' ' + str(tmp[j][0]) + ' ' + str(tmp[j][1]) + ' ' + str(tmp[j][2]) + ' ' + str(tmp[j][3])
+            send_line(sendtext)
+            print(sendtext)
     except:
-        return -1
+        return
 
 # main関数
 def auto_reservation(driver, pw_range_top, pw_range_bottom):
@@ -209,15 +147,9 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
     for x, i in enumerate(account_password, 1):
         #　 アカウントの範囲
         if(pw_range_top> x or x > pw_range_bottom):
-            if check_bl[0]==False or x!=1:
-                continue
+            continue
         # 進行状況
-        if check_bl[0] and x==1:
-            print('現在' + str(x) + '番目のアカウントを参照中 (ID : ' + str(i[0].zfill(8)) + ')')
-            # send_line('現在' + str(x) + '番目のアカウントを参照中 (ID : ' + str(i[0].zfill(8)) + ')')
-        else:
-            print('現在' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')')
-            # send_line('現在' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')')
+        print('現在' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')')
         # 施設予約ログイン
         while True:
             xpath_click(driver, facility_reservation_login_button)
@@ -230,7 +162,7 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                 driver.refresh()
                 time.sleep(0.8)
         #ウィンドウサイズを指定のサイズに変更
-        driver.set_window_size(1200,900)
+        driver.set_window_size(1200,900)   
         # 番号・パスワード入力・ログイン
         id_send_keys(driver, registered_number_text_field, i[0].zfill(8))
         id_send_keys(driver, password_text_field, i[1])
@@ -253,6 +185,7 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                 xpath_click(driver, login_button)
             else:
                 driver.back()
+        
         #　有効期限切れの場合はスキップ
         if xpath_exist_check(driver, expiration_alert, 15):
             # ログアウト       
@@ -260,82 +193,11 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
             time.sleep(0.5)
             xpath_click(driver, logout_button_s)
             print(str(x)+"番目のアカウント(ID: "+ str(i[0].zfill(8)) +")を飛ばしました。")
-            send_line("\n"+str(x)+"番目のアカウント(ID: "+ str(i[0].zfill(8)) +")が期限切れです。")
             continue
-        # 親アカウントの抽選申込をチェック
-        if check_bl[0] and x == 1:
-            if parent_check(driver):
-                continue
-        # 抽選申込ファイルitems.csvから項目を読み込み
-        with open('./items.csv') as f:
-            reader = csv.reader(f)
-            gym_day_time = [row for row in reader]
-        # idx：何枠目まで抽選ができているか
-        idx = start_check(driver, gym_day_time)
-        # 1項目目のフラグ False
-        f_flag = False
         
-        # 抽選申込
-        for k, j in enumerate(gym_day_time):  # j[0] gym  j[1] day  j[2] time
-            if k <= idx:
-                continue
-            if f_flag:
-                # 施設がデフォルトと同じ場合は入力をスキップ
-                if j[0] != xpath_get(driver, facility_name_default):                      
-                    # 施設バツ
-                    xpath_click(driver, gym_clear)
-                    # 施設
-                    xpath_send_keys(driver, facility_name_text_field_q, j[0])
-                    xpath_click(driver, facility_item_q)
-                    xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/h1")
-                # 利用日バツ
-                xpath_click(driver, date_of_use_clear)
-                # 利用日
-                xpath_send_keys(driver, date_of_use_q, year_month[0]+year_month[1]+j[1].zfill(2))
-                # 空き施設検索
-                xpath_click(driver, facility_search_button_q)
-                xpath_click(driver, facility_search_button_q)
-            else:
-                # 目的
-                xpath_send_keys(driver, purpose_of_use, sports[0])
-                xpath_click(driver, purpose_of_item)
-                
-                # 施設
-                xpath_send_keys(driver, facility_name_text_field, j[0])
-                xpath_click(driver, facility_item)
-                xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
-                # 利用日
-                xpath_send_keys(driver, date_of_use, year_month[0]+year_month[1]+j[1].zfill(2))
-                # 空き施設検索
-                xpath_click(driver, facility_search_button)
-                xpath_click(driver, facility_search_button)
-            #空き状況
-            xpath_click(driver, aki_joukyou_button)
-            #時間帯指定
-            select_time(driver, x, j)
-            # 確認
-            xpath_click(driver, time_check_button)
-            # 抽選申込へ
-            xpath_click(driver, to_application_button)
-            # 利用人数
-            xpath_send_keys(driver, num_of_people_form, num_of_people)
-            # 確認
-            xpath_click(driver, last_check)
-            # 注意事項を確認しました&申込確定
-            time.sleep(0.5)
-            xpath_click(driver, application_ok)
-            time.sleep(0.5)
-            xpath_click(driver, last_error_text)
-            xpath_click(driver, last_check_box)
-            xpath_click(driver, application_ok2)
-            # 施設一覧・検索へ
-            xpath_click(driver, back_facility_view)
-            f_flag = True
-            # エラーが出たら通知して終了
-            if no_error[0] == False:
-                send_line('\nエラーが発生しました。\n' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')で発生。')
-                print('エラーが発生しました。' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')で発生。')
-                return
+        # 当選確認と利用予約
+        infocheck(driver, x-1, account_password)
+        
         # ログアウト
         xpath_click(driver, main_menu2)
         time.sleep(0.5)
@@ -345,10 +207,20 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
             send_line('\nエラーが発生しました。\n' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')で発生。')
             print('エラーが発生しました。' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')で発生。')
             return
+    
+    winlist1 = sorted(winlist, key=operator.itemgetter(2, 4, 1, 0))
+    with open('./result/rsl_'+ res_acc[0], 'a', newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(winlist1)
+    newres = read_csv('./result/rsl_'+ res_acc[0])
+    newres = sorted(newres,  key=operator.itemgetter(2, 4, 1, 0))
+    with open('./result/rsl_'+ res_acc[0], 'w', newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(winlist1)
     #終了と通知
     driver.quit()
-    send_line("\n"+str(pw_range_top)+" ~ "+str(pw_range_bottom)+"番目のアカウント(ID : " + str(account_password[pw_range_top-1][0]) + " ~ " + str(account_password[pw_range_bottom-1][0]) + ")の抽選申込が完了しました。")
-    print(str(pw_range_top)+" ~ "+str(pw_range_bottom)+"番目のアカウント(ID : " + str(account_password[pw_range_top-1][0]) + " ~ " + str(account_password[pw_range_bottom-1][0]) + ")の抽選申込が完了しました。")
+    send_line("\n"+str(pw_range_top)+" ~ "+str(pw_range_bottom)+"番目のアカウント(ID : " + str(account_password[pw_range_top-1][0]) + " ~ " + str(account_password[pw_range_bottom-1][0]) + ")の当選確認が完了しました。")
+    print(str(pw_range_top)+" ~ "+str(pw_range_bottom)+"番目のアカウント(ID : " + str(account_password[pw_range_top-1][0]) + " ~ " + str(account_password[pw_range_bottom-1][0]) + ")の当選確認が完了しました。")
 
 
 # 利用年・月・体育館・日付・時間帯
@@ -375,6 +247,10 @@ sports = [""]
 csv_list = []
 # アカウントリストのパス
 account_password_path = ['']
+#　当選リスト
+winlist = []
+# 参照するアカウントリスト
+res_acc = [""]
 
 # ログイン
 facility_reservation_login_button = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[2]/div[1]/span[1]/a"
@@ -406,6 +282,24 @@ view_item_date1 = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/d
 view_item_date2 = "]/div[1]/div[2]/div[2]/div[2]/time[1]"
 view_item_time1 = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/div[1]/div/div[2]/div/div[2]/div/div["
 view_item_time2 = "]/div[1]/div[2]/div[2]/div[2]/span[2]"
+view_item_a1 = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/div[1]/div/div[2]/div/div[2]/div/div["
+view_item_a2 = "]/div[1]/div[2]/div[2]/div[1]/a"
+# 当選確定する
+confirm_win = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[1]/div/dl[2]/dd/div[2]/a/span"
+# 支払い方法へ
+howtopay = "/html/body/div/div/div[3]/div/main/div[2]/div/div[1]/div/button"
+# 確認
+confirm_pay = "/html/body/div/div/div[3]/div/main/div[1]/div[5]/div/div[1]/div/button"
+# 申込確定
+confirm_appl = "/html/body/div/div/div[3]/div/main/div[2]/div/div[1]/div/button[1]"
+# エラーがあります
+confirm_err = "/html/body/div/div/div[3]/div/main/div[2]/div/div[2]/div/div/div/button"
+# 注意事項確認
+confirm_check = "/html/body/div/div/div[3]/div/main/div[1]/form/div[4]/div[2]/div[3]/span/div/div/div[1]"
+# 申込確定2回目
+confirm_appl2 = "/html/body/div/div/div[3]/div/main/div[1]/div[5]/div/div[1]/div/button[1]"
+# 申込状況へ
+to_status_appl = "/html/body/div/div/div[3]/div/nav/ul/li[3]/a/span"
 # ホームへ
 to_home_from_status = "/html/body/div/div/div[3]/div/nav/ul/li[1]/a/span"
 
@@ -419,6 +313,7 @@ status_top_time = "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[1]/div[1
 now_login = "/html/body/div/div/div[2]/header/div/div[4]/span[1]"
 # 有効期限切れ
 expiration_alert = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div/div/div/div/div/div[2]/a"
+
 
 # 連続時
 # 施設名
