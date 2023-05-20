@@ -76,7 +76,7 @@ label_header2 = tk.Label(root, text=u'アカウントリスト(csv)', font=("Ari
 label_header2.place(x=160, y=94)
 button = tk.Button(text="抽選申込開始", font=("Arial", "12", "bold"), command=click_botton)
 button.place(x=20, y=154)
-label_header3 = tk.Label(root, text=u'ver 2.1.2', font=("Arial", "12", "bold"))
+label_header3 = tk.Label(root, text=u'ver 2.1.3', font=("Arial", "12", "bold"))
 label_header3.place(x=320, y=254)
 # bln = tk.BooleanVar()
 # chk = tk.Checkbutton(root, text='親アカウントを参照する', font=("Arial", "12", "bold"), variable=bln)

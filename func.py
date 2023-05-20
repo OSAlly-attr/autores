@@ -310,6 +310,7 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                 # 目的
                 xpath_send_keys(driver, purpose_of_use, sports[0])
                 xpath_click(driver, purpose_of_item)
+                xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
                 
                 # 施設
                 xpath_send_keys(driver, facility_name_text_field, j[0])
