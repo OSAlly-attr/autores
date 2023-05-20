@@ -309,6 +309,7 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
             else:
                 # 目的
                 xpath_send_keys(driver, purpose_of_use, sports[0])
+                time.sleep(2)
                 xpath_click(driver, purpose_of_item)
                 xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
                 
