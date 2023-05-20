@@ -138,10 +138,11 @@ def parent_check(driver):
     time.sleep(1)
     xpath_click(driver, num_view)
     time.sleep(1)
-    xpath_click(driver, view_twenty)
+    xpath_click(driver, view_forty)
     time.sleep(1)
     tmp = []
-    for i in range(1,16):
+    for i in range(1,40):
+        count = 0
         if '抽選待ち' in xpath_get(driver, view_item_attr1 + str(i) + view_item_attr2):
             top_gym = xpath_get(driver, view_item_gym1 + str(i) + view_item_gym2)
             top_date = xpath_get(driver, view_item_date1 + str(i) + view_item_date2)
@@ -157,6 +158,9 @@ def parent_check(driver):
                 top_time_zone = 3
             top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], str(top_time_zone)]
             tmp.append(top_item)
+            count += 1
+            if count == 15:
+                break
     
     tmp.reverse()
     tmp = sorted(tmp)
@@ -409,8 +413,9 @@ agree_button = "/html/body/div/div/div[3]/div/main/div[2]/div/div[1]/div/button/
 all_status = "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[2]/a"
 # 表示件数
 num_view  = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/div[1]/div/div[2]/div/div[1]/div[2]/div/div/div/div[1]/div[1]"
-# 20件ずつ
+# x件ずつ
 view_twenty = "/html/body/div/div/div[8]/div/div[2]/div/div"
+view_forty = "/html/body/div/div/div[8]/div/div[3]/div/div"
 # 項目1
 view_item_attr1 = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/div[1]/div/div[2]/div/div[2]/div/div["
 view_item_attr2 = "]/div[1]/div[1]/span"
