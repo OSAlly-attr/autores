@@ -27,7 +27,7 @@ def chrome():
 
 # LINEに送信する関数
 def send_line(text):
-    TOKEN =  ''
+    TOKEN =  'Ghbzj30VWqKNzYTk1dZnh3NjkjRUntNJdUxCQNfEkOx'
     api_url = 'https://notify-api.line.me/api/notify'
     send_text = text
     TOKEN_dic = {'Authorization': 'Bearer ' + TOKEN}
@@ -286,7 +286,14 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                     xpath_click(driver, gym_clear)
                     # 施設
                     xpath_send_keys(driver, facility_name_text_field_q, j[0])
-                    xpath_click(driver, facility_item_q)
+                    while(1):
+                        if xpath_get(driver, facility_item_q) == j[0]:
+                            xpath_click(driver, facility_item_q)
+                            break
+                        else:
+                            time.sleep(0.5)
+                            xpath_click(driver, gym_clear)
+                            xpath_send_keys(driver, facility_name_text_field_q, j[0])
                     xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/h1")
                 # 利用日バツ
                 xpath_click(driver, date_of_use_clear)
@@ -302,8 +309,15 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                 
                 # 施設
                 xpath_send_keys(driver, facility_name_text_field, j[0])
-                xpath_click(driver, facility_item)
-                xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
+                while(1):
+                    if xpath_get(driver, facility_item) == j[0]:
+                        xpath_click(driver, facility_item)
+                        xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
+                        break
+                    else:
+                        time.sleep(0.5)
+                        xpath_click(driver, facility_item_clear)
+                        xpath_send_keys(driver, facility_name_text_field, j[0])
                 # 利用日
                 xpath_send_keys(driver, date_of_use, year_month[0]+year_month[1]+j[1].zfill(2))
                 # 空き施設検索
@@ -428,6 +442,7 @@ gym_clear = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[1]/div/div[1]/
 # 施設
 facility_name_text_field_q = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[1]/div/div[1]/div/form/dl[1]/dd/span[3]/span/div/div[2]/div[1]/div[1]/div[1]/input"
 facility_item_q = "/html/body/div/div/div[10]/div/div[2]/div/div/div"
+facility_item_clear = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[3]/span/div/div[2]/div[1]/div[1]/div[1]/span/span/button"
 # 利用日時バツ
 date_of_use_clear = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[1]/div/div[1]/div/form/dl[2]/dd/span[1]/div[1]/div/div[1]/div[2]/div/button"
 # 利用日時
