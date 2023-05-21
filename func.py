@@ -312,6 +312,12 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                 time.sleep(2)
                 xpath_click(driver, purpose_of_item)
                 xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
+                while(1):
+                    if xpath_exist_check(driver, purpose_pannel, 15):
+                        break
+                    else:
+                        xpath_click(driver, purpose_of_item)
+                        xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
                 
                 # 施設
                 xpath_send_keys(driver, facility_name_text_field, j[0])
@@ -462,6 +468,9 @@ facility_search_button_q = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div
 purpose_of_use = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[1]/span/div/div[2]/div[1]/div[1]/div[1]/input"
 # 項目(バレーボール)
 purpose_of_item = "/html/body/div/div/div[9]/div/div[4]/div"
+# 項目のパネル
+purpose_pannel = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[1]/span/div/div[2]/div[1]/div[1]/div[1]/span/span/span"
+
 # 施設
 facility_name_text_field = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[3]/span/div/div[2]/div[1]/div[1]/div[1]/input"
 facility_item = "/html/body/div/div/div[10]/div/div[2]/div"
