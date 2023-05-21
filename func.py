@@ -37,6 +37,17 @@ def send_line(text):
 # def send_line(text):
 #     return
 
+# xpathでページ遷移ができるまで待つ関数(要素が存在するかチェックする関数)
+def xpath_exist_check(driver, xpath, tm):
+    for i in range(tm):
+        try:
+            if len(driver.find_elements(By.XPATH, xpath))!=0:
+                return True
+            time.sleep(dtry)
+        except:
+            time.sleep(dtry)
+    return False
+
 # xpathでクリックする関数
 def xpath_click(driver, xpath):
     if no_error[0]:
@@ -48,6 +59,18 @@ def xpath_click(driver, xpath):
                 time.sleep(dtry)
         no_error[0] = False
 
+# xpathのリストで，押せる方を押す関数
+def xpath_click2(driver, xpath_list):
+    if no_error[0]:
+        for i in range(trymax):
+            try:
+                for k in range(len(xpath_list)):
+                    if xpath_exist_check(driver, xpath_list[k], 2):
+                        driver.find_element(By.XPATH, xpath_list[k]).click()
+                        return
+            except:
+                time.sleep(dtry)
+        no_error[0] = False 
 # xpathで入力する関数
 def xpath_send_keys(driver, xpath, keys):
     if no_error[0]:
@@ -84,21 +107,17 @@ def xpath_get(driver, xpath):
                 time.sleep(dtry)
         no_error[0] = False
 
-# xpathでページ遷移ができるまで待つ関数(要素が存在するかチェックする関数)
-def xpath_exist_check(driver, xpath, tm):
-    for i in range(tm):
-        try:
-            if len(driver.find_elements(By.XPATH, xpath))!=0:
-                return True
-            time.sleep(dtry)
-        except:
-            time.sleep(dtry)
-    return False
-    for c in text:
-        letter = unicodedata.east_asian_width(c)
-        if letter != 'W':
-            return False
-    return True
+# xpath_listのどちらかの要素を取得する関数
+def xpath_get2(driver, xpath_list):
+    if no_error[0]:
+        for i in range(trymax):
+            try:
+                for k in range(len(xpath_list)):
+                    if xpath_exist_check(driver, xpath_list[k], 2):
+                        return driver.find_element(By.XPATH, xpath_list[k]).text
+            except:
+                time.sleep(dtry)
+        no_error[0] = False
 
 # 時間帯指定する関数　(アカウントごとに半面AB交互、全面はとらない)
 def select_time(driver, x, j):
@@ -309,21 +328,20 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
             else:
                 # 目的
                 xpath_send_keys(driver, purpose_of_use, sports[0])
-                time.sleep(2)
-                xpath_click(driver, purpose_of_item)
+                xpath_click2(driver, purpose_of_item)
                 xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
                 while(1):
                     if xpath_exist_check(driver, purpose_pannel, 15):
                         break
                     else:
-                        xpath_click(driver, purpose_of_item)
+                        xpath_click2(driver, purpose_of_item)
                         xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
                 
                 # 施設
                 xpath_send_keys(driver, facility_name_text_field, j[0])
                 while(1):
-                    if xpath_get(driver, facility_item) == j[0]:
-                        xpath_click(driver, facility_item)
+                    if xpath_get2(driver, facility_item) == j[0]:
+                        xpath_click2(driver, facility_item)
                         xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
                         break
                     else:
@@ -402,6 +420,7 @@ csv_list = []
 # アカウントリストのパス
 account_password_path = ['']
 
+
 # ログイン
 facility_reservation_login_button = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[2]/div[1]/span[1]/a"
 #　利用者番号
@@ -467,13 +486,19 @@ facility_search_button_q = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div
 # 利用目的
 purpose_of_use = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[1]/span/div/div[2]/div[1]/div[1]/div[1]/input"
 # 項目(バレーボール)
-purpose_of_item = "/html/body/div/div/div[9]/div/div[4]/div"
+purpose_of_item = []
+purpose_of_item.append("/html/body/div/div/div[12]/div/div[4]/div")
+purpose_of_item.append("/html/body/div/div/div[9]/div/div[4]/div")
+
 # 項目のパネル
 purpose_pannel = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[1]/span/div/div[2]/div[1]/div[1]/div[1]/span/span/span"
 
 # 施設
 facility_name_text_field = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[3]/span/div/div[2]/div[1]/div[1]/div[1]/input"
-facility_item = "/html/body/div/div/div[10]/div/div[2]/div"
+facility_item = []
+facility_item.append("/html/body/div/div/div[13]/div/div[2]/div")
+facility_item.append("/html/body/div/div/div[10]/div/div[2]/div")
+
 # 利用日時
 date_of_use = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[2]/dd/span[1]/div[1]/div/div[1]/div[1]/input"
 time_of_use = ["/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[2]/dd/span[2]/div/div/div[1]/fieldset/div[1]/div/div/div[1]/div/label","/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[2]/dd/span[2]/div/div/div[1]/fieldset/div[1]/div/div/div[1]/div/label","/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[2]/dd/span[2]/div/div/div[1]/fieldset/div[2]/div/div/div[1]/div/label","/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[2]/dd/span[2]/div/div/div[1]/fieldset/div[3]/div/div/div[1]/div/label"]
