@@ -342,15 +342,27 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                 
                 # 施設
                 xpath_send_keys(driver, facility_name_text_field, j[0])
-                while(1):
-                    if xpath_get2(driver, facility_item) == j[0]:
-                        xpath_click2(driver, facility_item)
-                        xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
+                xpath_click2(driver, facility_item)
+                xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
+                while(1): 
+                    if xpath_get(driver, facility_pannel) == j[0]:
                         break
                     else:
                         time.sleep(0.5)
                         xpath_click(driver, facility_item_clear)
                         xpath_send_keys(driver, facility_name_text_field, j[0])
+                        xpath_click2(driver, facility_item)
+                        xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
+                
+                # while(1):
+                #     if xpath_get2(driver, facility_item) == j[0]:
+                #         xpath_click2(driver, facility_item)
+                #         xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
+                #         break
+                #     else:
+                #         time.sleep(0.5)
+                #         xpath_click(driver, facility_item_clear)
+                #         xpath_send_keys(driver, facility_name_text_field, j[0])
                 # 利用日
                 xpath_send_keys(driver, date_of_use, year_month[0]+year_month[1]+j[1].zfill(2))
                 # 空き施設検索
@@ -501,10 +513,11 @@ purpose_pannel = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]
 # 施設
 facility_name_text_field = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[3]/span/div/div[2]/div[1]/div[1]/div[1]/input"
 facility_item = []
-facility_item.append("/html/body/div/div/div[13]/div/div[2]/div")
-facility_item.append("/html/body/div/div/div[12]/div/div[2]/div")
-facility_item.append("/html/body/div/div/div[11]/div/div[2]/div")
-facility_item.append("/html/body/div/div/div[10]/div/div[2]/div")
+facility_item.append("/html/body/div/div/div[13]/div/div[2]/div/div/div")
+facility_item.append("/html/body/div/div/div[12]/div/div[2]/div/div/div")
+facility_item.append("/html/body/div/div/div[11]/div/div[2]/div/div/div")
+facility_item.append("/html/body/div/div/div[10]/div/div[2]/div/div/div")
+facility_pannel = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[3]/span/div/div[2]/div[1]/div[1]/div[1]/span/span/span"
 
 # 利用日時
 date_of_use = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[2]/dd/span[1]/div[1]/div/div[1]/div[1]/input"
