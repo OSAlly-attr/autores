@@ -27,7 +27,10 @@ def chrome():
 
 # LINEに送信する関数
 def send_line(text):
-    TOKEN =  'Ghbzj30VWqKNzYTk1dZnh3NjkjRUntNJdUxCQNfEkOx'
+    f = open('line_key.txt', 'r')
+    data = f.read()
+    f.close()
+    TOKEN =  data
     api_url = 'https://notify-api.line.me/api/notify'
     send_text = text
     TOKEN_dic = {'Authorization': 'Bearer ' + TOKEN}
@@ -497,6 +500,8 @@ purpose_pannel = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]
 facility_name_text_field = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[3]/span/div/div[2]/div[1]/div[1]/div[1]/input"
 facility_item = []
 facility_item.append("/html/body/div/div/div[13]/div/div[2]/div")
+facility_item.append("/html/body/div/div/div[12]/div/div[2]/div")
+facility_item.append("/html/body/div/div/div[11]/div/div[2]/div")
 facility_item.append("/html/body/div/div/div[10]/div/div[2]/div")
 
 # 利用日時
@@ -543,3 +548,6 @@ logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]
 
 # データ
 start_time_list = [8,11,14,17,24]
+
+# バージョン　
+ver = "2.1.4"

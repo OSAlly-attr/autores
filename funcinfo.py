@@ -28,7 +28,7 @@ def chrome():
 
 # LINEに送信する関数
 def send_line(text):
-    TOKEN =  ''
+    TOKEN =  'Ghbzj30VWqKNzYTk1dZnh3NjkjRUntNJdUxCQNfEkOx'
     api_url = 'https://notify-api.line.me/api/notify'
     send_text = text
     TOKEN_dic = {'Authorization': 'Bearer ' + TOKEN}
@@ -382,3 +382,6 @@ logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]
 
 # データ
 start_time_list = [8,11,14,17,24]
+
+# バージョン
+ver = "2.1.4"
