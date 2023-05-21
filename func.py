@@ -491,6 +491,8 @@ purpose_of_use = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]
 # 項目(バレーボール)
 purpose_of_item = []
 purpose_of_item.append("/html/body/div/div/div[12]/div/div[4]/div")
+purpose_of_item.append("/html/body/div/div/div[11]/div/div[4]/div")
+purpose_of_item.append("/html/body/div/div/div[10]/div/div[4]/div")
 purpose_of_item.append("/html/body/div/div/div[9]/div/div[4]/div")
 
 # 項目のパネル
