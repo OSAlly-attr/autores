@@ -2,6 +2,7 @@ import time
 import csv
 import requests
 import unicodedata
+import operator
 from tkinter import messagebox
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -14,15 +15,15 @@ import datetime
 def read_csv(path):
     with open(path, encoding="utf-8-sig") as f:
         reader = csv.reader(f)
-        data1_data2 = [row for row in reader]
-        return data1_data2
+        data = [row for row in reader]
+        return data
 
 # ChromeWebdriverを起動する関数
-def chrome():
+def chrome_reservation():
     ChromeOptions = Options()
     ChromeOptions.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=ChromeOptions)
-    auto_reservation(driver, pw_range[0], pw_range[1])
+    auto_reservation(driver, int(pw_range[0]), int(pw_range[1]))
     return
 
 # LINEに送信する関数
@@ -36,9 +37,6 @@ def send_line(text):
     TOKEN_dic = {'Authorization': 'Bearer ' + TOKEN}
     send_dic = {'message': send_text}
     requests.post(api_url, headers=TOKEN_dic, data=send_dic)
-
-# def send_line(text):
-#     return
 
 # xpathでページ遷移ができるまで待つ関数(要素が存在するかチェックする関数)
 def xpath_exist_check(driver, xpath, tm):
@@ -122,6 +120,17 @@ def xpath_get2(driver, xpath_list):
                 time.sleep(dtry)
         no_error[0] = False
 
+# xpathで属性の要素を取得する関数
+def xpath_get_attr(driver, xpath, attr):
+    if no_error[0]:
+        for i in range(trymax):
+            try:
+                tags = driver.find_elements(By.XPATH, xpath)
+                return tags[0].get_attribute(attr)
+            except:
+                time.sleep(dtry)
+        no_error[0] = False
+
 # 時間帯指定する関数　(アカウントごとに半面AB交互、全面はとらない)
 def select_time(driver, x, j):
     for i in range(trymax):
@@ -145,10 +154,13 @@ def select_time(driver, x, j):
         if start_time_list[int(j[2])] <= elm_text and elm_text < start_time_list[int(j[2])+1]:
             elements_list.append(elm)
     if len(elements_list) == 3:
+        time.sleep(0.1)
         elements_list[1+x%2].click()
     elif len(elements_list) == 2:
+        time.sleep(0.1)
         elements_list[x%2].click()
     elif len(elements_list) == 1:
+        time.sleep(0.1)
         elements_list[0].click()
 
 # 親アカウントの抽選申込をチェックする関数
@@ -178,25 +190,31 @@ def parent_check(driver):
                 top_time_zone = 2
             elif top_time > 16:
                 top_time_zone = 3
-            top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], str(top_time_zone)]
+            xpath_click(driver, view_item_gym1 + str(i) + view_item_gym2)
+            top_sports = xpath_get(driver, view_item_sports)
+            driver.back()
+            top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], str(top_time_zone), top_sports]
             tmp.append(top_item)
             count += 1
             if count == 15:
                 break
     
     tmp.reverse()
-    tmp = sorted(tmp)
+    tmp = sorted(tmp, key=operator.itemgetter(3,0,1))
     # ファイル出力
     with open('./items.csv', 'w', newline="") as f:
         writer = csv.writer(f)
         writer.writerows(tmp)
-    xpath_click(driver, to_home_from_status)
+    # xpath_click(driver, to_home_from_status)
     xpath_click(driver, main_menu2)
+    time.sleep(0.5)
     xpath_click(driver, logout_button)
+    # xpath_click(driver, main_menu2)
+    # xpath_click(driver, logout_button)
     return True
 
 # 途中から始める項目をチェックする関数
-def start_check(driver, gym_day_time):
+def start_check(driver, gym_day_time_sports):
     try:
         if '抽選待ち' in xpath_get(driver, status_top_attr):
             top_gym = xpath_get(driver, status_top_gym)
@@ -212,10 +230,10 @@ def start_check(driver, gym_day_time):
             elif top_time > 16:
                 top_time_zone = 3
             top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], str(top_time_zone)]
-            for j in range(len(gym_day_time)):
-                if gym_day_time[j] == top_item:
+            for j in range(len(gym_day_time_sports)):
+                if gym_day_time_sports[j][0:3] == top_item:
                     idx = j
-            if idx == len(gym_day_time)-1:
+            if idx == len(gym_day_time_sports)-1:
                 print("次のアカウントから始めます")
             else:
                 print(str(idx+2) + "枠目から始めます")
@@ -234,7 +252,7 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
     # 施設予約へ
     for x, i in enumerate(account_password, 1):
         #　 アカウントの範囲
-        if(pw_range_top> x or x > pw_range_bottom):
+        if(pw_range_top > x or x > pw_range_bottom):
             if check_bl[0]==False or x!=1:
                 continue
         # 進行状況
@@ -279,6 +297,47 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                 xpath_click(driver, login_button)
             else:
                 driver.back()
+        
+        # # メール通知設定変更
+        # xpath_click(driver, main_menu2)
+        # time.sleep(0.5)
+        # # アカウント設定
+        # xpath_click(driver, "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a[1]/div[2]/div")
+        # time.sleep(1)
+        # # メール受信設定
+        # xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/a/span")
+        # time.sleep(1)
+        # # すべてが消えるまで連打
+        # xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[1]/div/div/div[2]/span/div/div/div[1]/div/i")
+        # while(1):
+        #     if xpath_get(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[1]/div/div/div[2]/span/div/div/div[1]/div/i") != "a":
+        #         xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[1]/div/div/div[2]/span/div/div/div[1]/div/i")
+        #         time.sleep(0.3)
+        #     else:
+        #         break
+        # time.sleep(0.5)
+        # # 利用者に関するメールを閉じる
+        # if xpath_get_attr(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[2]/button", "aria-expanded") == "true":
+        #     xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[2]/button")
+        # time.sleep(0.5)
+        # # 抽選に関するメールを開く
+        # if xpath_get_attr(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[3]/button", "aria-expanded") == "false":
+        #     xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[3]/button")
+        # time.sleep(0.5)
+        # xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[3]/div/div/div/div[4]/div[2]/span/div/div/div[1]/div")
+        # time.sleep(0.2)
+        # xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[3]/div/div/div/div[5]/div[2]/span/div/div/div[1]/div")
+        # if xpath_exist_check(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[4]/div/div[1]/div/button", 60):
+        #     xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[4]/div/div[1]/div/button")
+        # time.sleep(1.5)
+        
+        # # ログアウト
+        # xpath_click(driver, main_menu2)
+        # time.sleep(0.5)
+        # xpath_click(driver, logout_button)
+        # time.sleep(0.5)
+        # continue
+        
         #　有効期限切れの場合はスキップ
         if xpath_exist_check(driver, expiration_alert, 15):
             # ログアウト       
@@ -288,6 +347,7 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
             print(str(x)+"番目のアカウント(ID: "+ str(i[0].zfill(8)) +")を飛ばしました。")
             send_line("\n"+str(x)+"番目のアカウント(ID: "+ str(i[0].zfill(8)) +")が期限切れです。")
             continue
+        
         # 親アカウントの抽選申込をチェック
         if check_bl[0] and x == 1:
             if parent_check(driver):
@@ -295,14 +355,14 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
         # 抽選申込ファイルitems.csvから項目を読み込み
         with open('./items.csv') as f:
             reader = csv.reader(f)
-            gym_day_time = [row for row in reader]
+            gym_day_time_sports = [row for row in reader]
         # idx：何枠目まで抽選ができているか
-        idx = start_check(driver, gym_day_time)
+        idx = start_check(driver, gym_day_time_sports)
         # 1項目目のフラグ False
         f_flag = False
         
         # 抽選申込
-        for k, j in enumerate(gym_day_time):  # j[0] gym  j[1] day  j[2] time
+        for k, j in enumerate(gym_day_time_sports):  # j[0] gym  j[1] day  j[2] time  j[3] sport
             if k <= idx:
                 continue
             if f_flag:
@@ -330,15 +390,18 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                 xpath_click(driver, facility_search_button_q)
             else:
                 # 目的
-                xpath_send_keys(driver, purpose_of_use, sports[0])
+                xpath_send_keys(driver, purpose_of_use, j[3])
                 xpath_click2(driver, purpose_of_item)
                 xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
-                while(1):
-                    if xpath_exist_check(driver, purpose_pannel, 15):
+                while(1): 
+                    if xpath_get(driver, purpose_pannel) == j[3]:
                         break
                     else:
+                        time.sleep(0.5)
+                        xpath_click(driver, purpose_item_clear)
+                        xpath_send_keys(driver, purpose_of_use, j[3])
                         xpath_click2(driver, purpose_of_item)
-                        xpath_click(driver, "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
+                        xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
                 
                 # 施設
                 xpath_send_keys(driver, facility_name_text_field, j[0])
@@ -353,16 +416,6 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
                         xpath_send_keys(driver, facility_name_text_field, j[0])
                         xpath_click2(driver, facility_item)
                         xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
-                
-                # while(1):
-                #     if xpath_get2(driver, facility_item) == j[0]:
-                #         xpath_click2(driver, facility_item)
-                #         xpath_click(driver,"/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[1]/h2")
-                #         break
-                #     else:
-                #         time.sleep(0.5)
-                #         xpath_click(driver, facility_item_clear)
-                #         xpath_send_keys(driver, facility_name_text_field, j[0])
                 # 利用日
                 xpath_send_keys(driver, date_of_use, year_month[0]+year_month[1]+j[1].zfill(2))
                 # 空き施設検索
@@ -387,9 +440,15 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
             xpath_click(driver, last_error_text)
             xpath_click(driver, last_check_box)
             xpath_click(driver, application_ok2)
-            # 施設一覧・検索へ
-            xpath_click(driver, back_facility_view)
-            f_flag = True
+            if k+1 >= len(gym_day_time_sports):
+                xpath_click(driver, back_menu_button)
+                break
+            if gym_day_time_sports[k][3] ==  gym_day_time_sports[k+1][3]:
+                f_flag = True
+                xpath_click(driver, back_facility_view)
+            else:
+                f_flag = False
+                xpath_click(driver, back_menu_button)
             # エラーが出たら通知して終了
             if no_error[0] == False:
                 send_line('\nエラーが発生しました。\n' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')で発生。')
@@ -415,9 +474,9 @@ today = datetime.date.today()
 delta = datetime.timedelta(days=15)
 day = today+delta
 year_month = [str(day.year), str(day.month).zfill(2)]
-gym_day_time = [[0 for i in range(3)] for j in range(15)]
-for i in range(15):
-    gym_day_time[i] = ["","",""] # 初期化
+gym_day_time_sports = [[0 for i in range(4)] for j in range(16)]
+for i in range(16):
+    gym_day_time_sports[i] = ["","","",""] # 初期化
 # 自動化するアカウントの範囲
 pw_range = ["",""]
 # 途中からはじめるチェックbool
@@ -428,8 +487,6 @@ trymax = 80
 dtry = 0.1
 # エラーフラグ
 no_error = [True]
-# 利用目的（競技）
-sports = [""]
 # アカウントのcsvリスト
 csv_list = []
 # アカウントリストのパス
@@ -438,6 +495,7 @@ account_password_path = ['']
 
 # ログイン
 facility_reservation_login_button = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[2]/div[1]/span[1]/a"
+
 #　利用者番号
 registered_number_text_field = "input-21"
 # パスワード
@@ -467,6 +525,7 @@ view_item_date1 = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/d
 view_item_date2 = "]/div[1]/div[2]/div[2]/div[2]/time[1]"
 view_item_time1 = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/div[1]/div/div[2]/div/div[2]/div/div["
 view_item_time2 = "]/div[1]/div[2]/div[2]/div[2]/span[2]"
+view_item_sports = '/html/body/div/div/div[3]/div/main/div[1]/div[4]/div/div/div/div/div[1]/div/dl[1]/dd'
 # ホームへ
 to_home_from_status = "/html/body/div/div/div[3]/div/nav/ul/li[1]/a/span"
 
@@ -478,8 +537,7 @@ status_top_time = "/html/body/div/div/div[3]/div/main/div[1]/div[3]/div[1]/div[1
 
 # ヘッダーのログイン中
 now_login = "/html/body/div/div/div[2]/header/div/div[4]/span[1]"
-# 有効期限切れ
-expiration_alert = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div/div/div/div/div/div[2]/a"
+
 
 # 連続時
 # 施設名
@@ -497,7 +555,15 @@ date_of_use_q = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[1]/div/div
 # 検索
 facility_search_button_q = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[1]/div/div[1]/div/form/div/div[1]/button"
 
-#初回時
+# 初回時
+# 有効期限更新
+# 有効期限を更新
+expiration_alert = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div/div/div/div/div/div[2]/a"
+to_update_expiration = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div/div/div/div/div/div[2]/a"
+exp_password = "/html/body/div/div/div[3]/div/main/div[1]/form/div/div/div/dl/dd/span/div/div/div[1]/div[1]/input"
+exp_password_button = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div/div[1]/div/button"
+exp_ok = "/html/body/div/div/div[3]/div/main/div[2]/div/div[1]/div/button[1]"
+
 # 利用目的
 purpose_of_use = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[1]/span/div/div[2]/div[1]/div[1]/div[1]/input"
 # 項目(バレーボール)
@@ -509,7 +575,7 @@ purpose_of_item.append("/html/body/div/div/div[9]/div/div[4]/div")
 
 # 項目のパネル
 purpose_pannel = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[1]/span/div/div[2]/div[1]/div[1]/div[1]/span/span/span"
-
+purpose_item_clear = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[1]/span/div/div[2]/div[1]/div[1]/div[2]/div/button"
 # 施設
 facility_name_text_field = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[1]/div[1]/div[2]/form/dl[1]/dd/span[3]/span/div/div[2]/div[1]/div[1]/div[1]/input"
 facility_item = []
@@ -559,10 +625,11 @@ main_menu = "/html/body/div/div/div[2]/header/div/div[2]/button[2]/span/span/div
 main_menu2= "/html/body/div/div/div[2]/header/div/div[2]/button/span/span/span"
 # ログアウトボタン
 logout_button = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a[2]/div[2]/div"
-logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a/div[2]/div"
+# logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a/div[2]/div"
+logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a[2]/div[2]/div"
 
 # データ
 start_time_list = [8,11,14,17,24]
 
 # バージョン　
-ver = "2.1.4"
+ver = "2.2.0"

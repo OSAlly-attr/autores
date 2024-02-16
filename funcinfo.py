@@ -1,4 +1,5 @@
 import time
+import datetime
 import csv
 import requests
 import operator
@@ -10,20 +11,21 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import datetime
+from func import pw_range, account_password_path
 
 # csvを読み込む関数
 def read_csv(path):
     with open(path, encoding="utf-8-sig") as f:
         reader = csv.reader(f)
-        data1_data2 = [row for row in reader]
-        return data1_data2
+        data = [row for row in reader]
+        return data
 
 # ChromeWebdriverを起動する関数
-def chrome():
+def chrome_result():
     ChromeOptions = Options()
     ChromeOptions.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=ChromeOptions)
-    auto_reservation(driver, pw_range[0], pw_range[1])
+    auto_reservation1(driver)
     return
 
 # LINEに送信する関数
@@ -35,8 +37,23 @@ def send_line(text):
     send_dic = {'message': send_text}
     requests.post(api_url, headers=TOKEN_dic, data=send_dic)
 
-# def send_line(text):
-#     return
+# winlist.txtを読み込む関数 (重複は消す)
+def read_winlist():
+    with open('./winlist.txt') as f:
+        for line in f:
+            winlist.append(line.rstrip('\n'))
+
+# winlistからaccount_passwordを生成する関数
+def generate_ap(ap, wl):
+    res = []
+    for w in wl:
+        for i in range(len(ap)):
+            if w == ap[i][0].zfill(8):
+                res.append(ap[i])
+        if len(res) == 0:
+            print("アカウントが見つかりません。IDを確認してください。")
+            return False
+    return res
 
 # xpathでクリックする関数
 def xpath_click(driver, xpath):
@@ -108,12 +125,13 @@ def infocheck(driver, x, account_password):
             if '当選' in xpath_get(driver, view_item_attr1 + str(i) + view_item_attr2) and '確定' not in xpath_get(driver, view_item_attr1 + str(i) + view_item_attr2):
                 top_gym = xpath_get(driver, view_item_gym1 + str(i) + view_item_gym2)
                 top_date = xpath_get(driver, view_item_date1 + str(i) + view_item_date2)
-                top_time = xpath_get(driver, view_item_time1 + str(i) + view_item_time2)
-                top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], top_date[top_date.find('('):],str(top_time)]
-                tmp.append(top_item)
-                winlist.append([str(account_password[x][0].zfill(8)), top_item[0], top_item[1], top_item[2], top_item[3]])
-                # 利用予約
+                top_time = xpath_get(driver, view_item_time1 + str(i) + view_item_time2) 
                 xpath_click(driver, view_item_a1 + str(i) + view_item_a2)
+                top_sports = xpath_get(driver, view_item_sports)
+                top_item = [top_gym[:top_gym.find(' /')], top_date[top_date.rfind('/')+1:top_date.find('(')], top_date[top_date.find('('):],str(top_time),top_sports]
+                tmp.append(top_item)
+                # winlist.append([str(account_password[x][0].zfill(8)), top_item[0], top_item[1], top_item[2], top_item[3]])
+                # 利用予約
                 xpath_click(driver,confirm_win)
                 xpath_click(driver, howtopay)
                 xpath_click(driver, confirm_pay)
@@ -130,24 +148,33 @@ def infocheck(driver, x, account_password):
         if len(tmp)>0:
             sendtext = ''
             for j in range(len(tmp)):
-                sendtext = sendtext + '\n' + str(account_password[x][0].zfill(8)) + ' ' + str(tmp[j][0]) + ' ' + str(tmp[j][1]) + ' ' + str(tmp[j][2]) + ' ' + str(tmp[j][3])
+                sendtext = sendtext + '\n' + str(account_password[x][0].zfill(8)) + ' ' + str(tmp[j][0]) + ' ' + str(tmp[j][1]) + ' ' + str(tmp[j][2]) + ' ' + str(tmp[j][3]) + ' ' + str(tmp[j][4])
             send_line(sendtext)
             print(sendtext)
     except:
         return
 
 # main関数
-def auto_reservation(driver, pw_range_top, pw_range_bottom):
+def auto_reservation1(driver):
     # アカウントパスワードリストを読み込み
-    account_password = read_csv(account_password_path[0])
+    ap = read_csv(account_password_path[0])
     # harp札幌 ページ読み込み
     time.sleep(0.2)
     driver.get('https://yoyaku.harp.lg.jp/sapporo/')
+    
+    # winlist.txtを読み込む
+    read_winlist()
+    # print(winlist)
+    wl = list(set(winlist))
+    print(wl)
+    # winlist_からaccount_passwordを生成
+    account_password = generate_ap(ap,wl)
+    if account_password == False:
+        driver.quit()
+        return
+    
     # 施設予約へ
     for x, i in enumerate(account_password, 1):
-        #　 アカウントの範囲
-        if(pw_range_top> x or x > pw_range_bottom):
-            continue
         # 進行状況
         print('現在' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')')
         # 施設予約ログイン
@@ -208,19 +235,19 @@ def auto_reservation(driver, pw_range_top, pw_range_bottom):
             print('エラーが発生しました。' + str(x) + '番目のアカウント (ID : ' + str(i[0].zfill(8)) + ')で発生。')
             return
     
-    winlist1 = sorted(winlist, key=operator.itemgetter(2, 4, 1, 0))
-    with open('./result/rsl_'+ res_acc[0], 'a', newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(winlist1)
-    newres = read_csv('./result/rsl_'+ res_acc[0])
-    newres = sorted(newres,  key=operator.itemgetter(2, 4, 1, 0))
-    with open('./result/rsl_'+ res_acc[0], 'w', newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(winlist1)
+    # winlist1 = sorted(winlist, key=operator.itemgetter(2, 4, 1, 0))
+    # with open('./result/rsl_'+ res_acc[0], 'a', newline="") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerows(winlist1)
+    # newres = read_csv('./result/rsl_'+ res_acc[0])
+    # newres = sorted(newres,  key=operator.itemgetter(2, 4, 1, 0))
+    # with open('./result/rsl_'+ res_acc[0], 'w', newline="") as f:
+    #     writer = csv.writer(f)
+    #     writer.writerows(winlist1)
     #終了と通知
     driver.quit()
-    send_line("\n"+str(pw_range_top)+" ~ "+str(pw_range_bottom)+"番目のアカウント(ID : " + str(account_password[pw_range_top-1][0]) + " ~ " + str(account_password[pw_range_bottom-1][0]) + ")の当選確認が完了しました。")
-    print(str(pw_range_top)+" ~ "+str(pw_range_bottom)+"番目のアカウント(ID : " + str(account_password[pw_range_top-1][0]) + " ~ " + str(account_password[pw_range_bottom-1][0]) + ")の当選確認が完了しました。")
+    send_line("\n"+"当選確認が完了しました。")
+    print("当選確認が完了しました。")
 
 
 # 利用年・月・体育館・日付・時間帯
@@ -231,26 +258,18 @@ year_month = [str(day.year), str(day.month).zfill(2)]
 gym_day_time = [[0 for i in range(3)] for j in range(15)]
 for i in range(15):
     gym_day_time[i] = ["","",""] # 初期化
-# 自動化するアカウントの範囲
-pw_range = ["",""]
-# 途中からはじめるチェックbool
-check_bl = []
 # try繰り返す回数
 trymax = 80
 # try間隔
 dtry = 0.1
 # エラーフラグ
 no_error = [True]
-# 利用目的（競技）
-sports = [""]
-# アカウントのcsvリスト
-csv_list = []
-# アカウントリストのパス
-account_password_path = ['']
-#　当選リスト
-winlist = []
+
 # 参照するアカウントリスト
-res_acc = [""]
+# res_acc = [""]
+
+# winlist.txtのアカウントIDリスト
+winlist = []
 
 # ログイン
 facility_reservation_login_button = "/html/body/div/div/div[3]/div/main/div[1]/div[1]/div[2]/div[1]/span[1]/a"
@@ -284,6 +303,7 @@ view_item_time1 = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/d
 view_item_time2 = "]/div[1]/div[2]/div[2]/div[2]/span[2]"
 view_item_a1 = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[2]/div/div[1]/div/div[2]/div/div[2]/div/div["
 view_item_a2 = "]/div[1]/div[2]/div[2]/div[1]/a"
+view_item_sports = '/html/body/div/div/div[3]/div/main/div[1]/div[4]/div/div/div/div/div[1]/div/dl[1]/dd'
 # 当選確定する
 confirm_win = "/html/body/div/div/div[3]/div/main/div[1]/div[2]/div[1]/div/dl[2]/dd/div[2]/a/span"
 # 支払い方法へ
@@ -378,10 +398,8 @@ main_menu = "/html/body/div/div/div[2]/header/div/div[2]/button[2]/span/span/div
 main_menu2= "/html/body/div/div/div[2]/header/div/div[2]/button/span/span/span"
 # ログアウトボタン
 logout_button = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a[2]/div[2]/div"
-logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a/div[2]/div"
+# logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a/div[2]/div"
+logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]/div/div[2]/a[2]/div[2]/div"
 
 # データ
 start_time_list = [8,11,14,17,24]
-
-# バージョン
-ver = "2.1.4"
