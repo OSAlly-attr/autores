@@ -632,4 +632,4 @@ logout_button_s = "/html/body/div/div/div[3]/header/div/div[3]/div[1]/nav/div[2]
 start_time_list = [8,11,14,17,24]
 
 # バージョン　
-ver = "2.2.0"
+ver = "3.0.0"
